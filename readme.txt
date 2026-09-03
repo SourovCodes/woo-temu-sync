@@ -23,8 +23,9 @@ seller accounts.
 = Status =
 
 Early development. The connection layer, product publishing, publication status
-polling, stock and price sync and order import are complete and tested.
-Fulfilment - pushing tracking numbers back to Temu - is the remaining piece.
+polling, stock and price sync, order import and self-fulfilment are complete and
+tested. Temu's own Buy-Shipping label purchase is not implemented; sellers who
+are restricted to it need Seller Center.
 
 Note that Temu grants its price API per store, through their business team. Stock
 sync works for every seller; price sync needs that grant, and the plugin tells you
@@ -64,3 +65,5 @@ your site's WordPress salts.
   when the platform will not accept a change.
 * Order import, polling Temu on last-update time, with buyer address decryption
   you can switch off if you fulfil elsewhere.
+* Self-fulfilment: confirm a shipment to Temu from the WooCommerce order screen,
+  with the carrier list Temu accepts for that market.

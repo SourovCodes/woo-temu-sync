@@ -239,6 +239,36 @@ minutes, because Temu's clock is not ours and the import is idempotent anyway.
   real imported order against Seller Center, then pin it with
   `wtsync_order_amount` if needed.
 
+## Fulfilment
+
+**Self-fulfilment only.** The seller ships with their own carrier and reports the
+tracking number through `bg.logistics.shipment.v2.confirm`. Temu's Buy-Shipping
+path is deliberately out of scope: it is an asynchronous label purchase that must
+be polled, and the label download uses a second request signing scheme with its
+own `toa-*` headers and a ten minute URL expiry. A seller with a local warehouse
+already has labels. See `docs/temu-api-notes.md` before anyone decides to add it.
+
+Temu enforces rules WooCommerce does not, and breaking them rejects the whole
+shipment rather than partly accepting it:
+
+- A tracking number is good for **one** fulfilment.
+- **The whole parent order ships at once.** No partial fulfilment, and none
+  spanning parent orders.
+- Temu validates the tracking number against the chosen carrier's format.
+
+So `ShipmentConfirmer` always sends every Temu line at the quantity Temu
+recorded, and **excludes any line the seller added by hand** — an unrecognised
+order item fails the entire confirmation. It also strips separators from tracking
+numbers, because error 120014020 rejects the dashes couriers and staff both add.
+
+`120012004` (already shipped) is treated as **success**, not failure: a retry
+after a lost response has to settle rather than leave the seller thinking the
+shipment never registered.
+
+The order screen panel is the interface, because a tracking number arrives when
+the parcel is packed and Temu will not take a partial shipment — this is a
+per-order act by design, not a bulk tool.
+
 ## Working agreement
 
 - Run `composer lint` before calling any change done.

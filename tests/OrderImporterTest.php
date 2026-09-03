@@ -287,6 +287,9 @@ class OrderImporterTest extends WP_UnitTestCase {
 		$items = array_values( $order->get_items() );
 
 		$this->assertSame( '76-9900000000001', $items[0]->get_meta( OrderImporter::META_ORDER_SN ) );
+		$this->assertSame( 700500, (int) $items[0]->get_meta( OrderImporter::META_GOODS_ID ) );
+		$this->assertSame( 9001, (int) $items[0]->get_meta( OrderImporter::META_SKU_ID ) );
+		$this->assertSame( 2, (int) $items[0]->get_meta( OrderImporter::META_QUANTITY ) );
 	}
 
 	/**

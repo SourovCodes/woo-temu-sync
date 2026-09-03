@@ -9,7 +9,7 @@ msgstr ""
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"POT-Creation-Date: 2026-09-03T16:48:27+00:00\n"
+"POT-Creation-Date: 2026-09-03T16:57:48+00:00\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "X-Generator: WP-CLI 2.12.0\n"
 "X-Domain: woo-temu-sync\n"
@@ -32,6 +32,48 @@ msgstr ""
 #. Author of the plugin
 #: woo-temu-sync.php
 msgid "Sourov Biswas"
+msgstr ""
+
+#: includes/Admin/OrderPanel.php:76
+msgid "Temu fulfilment"
+msgstr ""
+
+#: includes/Admin/OrderPanel.php:100
+msgid "This order did not come from Temu."
+msgstr ""
+
+#: includes/Admin/OrderPanel.php:106
+msgid "Temu order"
+msgstr ""
+
+#: includes/Admin/OrderPanel.php:139
+msgid "Reported to Temu as shipped"
+msgstr ""
+
+#: includes/Admin/OrderPanel.php:144
+#: includes/Admin/OrderPanel.php:192
+msgid "Tracking number"
+msgstr ""
+
+#: includes/Admin/OrderPanel.php:151
+#: includes/Admin/OrderPanel.php:173
+msgid "Carrier"
+msgstr ""
+
+#: includes/Admin/OrderPanel.php:158
+msgid "Temu accepts one tracking number per shipment, so this cannot be sent again from here."
+msgstr ""
+
+#: includes/Admin/OrderPanel.php:176
+msgid "Temu's carrier list could not be loaded. Enter the carrier id by hand if you know it."
+msgstr ""
+
+#: includes/Admin/OrderPanel.php:180
+msgid "Select a carrier"
+msgstr ""
+
+#: includes/Admin/OrderPanel.php:197
+msgid "Temu requires the whole order to ship at once and accepts a tracking number only once. Saving the order sends this to Temu."
 msgstr ""
 
 #: includes/Admin/ProductColumn.php:48
@@ -342,17 +384,95 @@ msgstr ""
 msgid "Unknown Temu API error."
 msgstr ""
 
+#: includes/Fulfilment/ShipmentConfirmer.php:167
+msgid "Enter the tracking number before confirming the shipment."
+msgstr ""
+
+#: includes/Fulfilment/ShipmentConfirmer.php:171
+msgid "Choose the carrier that Temu should record for this shipment."
+msgstr ""
+
+#: includes/Fulfilment/ShipmentConfirmer.php:175
+msgid "This order has already been reported to Temu as shipped."
+msgstr ""
+
+#: includes/Fulfilment/ShipmentConfirmer.php:181
+msgid "This order has no Temu line items to confirm."
+msgstr ""
+
+#: includes/Fulfilment/ShipmentConfirmer.php:187
+msgid "Temu does not accept that carrier for this order's market."
+msgstr ""
+
+#. translators: %s: tracking number.
+#: includes/Fulfilment/ShipmentConfirmer.php:257
+#, php-format
+msgid "Shipment confirmed to Temu with tracking number %s."
+msgstr ""
+
+#: includes/Fulfilment/ShipmentConfirmer.php:346
+msgid "Temu received no tracking number."
+msgstr ""
+
+#: includes/Fulfilment/ShipmentConfirmer.php:349
+msgid "Temu could not read the tracking number. Remove any dashes, spaces or other symbols and try again."
+msgstr ""
+
+#: includes/Fulfilment/ShipmentConfirmer.php:354
+msgid "Temu does not recognise that tracking number for the chosen carrier. Check both and try again."
+msgstr ""
+
+#: includes/Fulfilment/ShipmentConfirmer.php:357
+msgid "The tracking number and carrier do not match. Check that the carrier is the one that actually carried the parcel."
+msgstr ""
+
+#: includes/Fulfilment/ShipmentConfirmer.php:360
+msgid "That is a Temu-generated tracking number, which cannot be used to confirm a self-fulfilled shipment."
+msgstr ""
+
+#: includes/Fulfilment/ShipmentConfirmer.php:363
+msgid "The buyer has asked to change the delivery address. Handle that in Seller Center before shipping."
+msgstr ""
+
+#: includes/Fulfilment/ShipmentConfirmer.php:366
+msgid "The buyer has asked to cancel this order. Answer the cancellation in Seller Center before shipping."
+msgstr ""
+
+#: includes/Fulfilment/ShipmentConfirmer.php:369
+msgid "Temu has no shipping address for this order yet."
+msgstr ""
+
+#: includes/Fulfilment/ShipmentConfirmer.php:373
+msgid "Temu has restricted this store from confirming its own shipments. Temu's buy-shipping labels have to be used instead, which this plugin does not do; use Seller Center."
+msgstr ""
+
+#: includes/Fulfilment/ShipmentConfirmer.php:378
+msgid "Temu needs a valid self-shipping warehouse for this order. Set one with the wtsync_self_shipping_warehouse_id filter, or check the warehouse settings in Seller Center."
+msgstr ""
+
+#: includes/Fulfilment/ShipmentConfirmer.php:381
+msgid "Fill in the warehouse management type and brand in Temu Seller Center before confirming shipments."
+msgstr ""
+
+#: includes/Fulfilment/ShipmentConfirmer.php:384
+msgid "Temu will not ship from that warehouse to this buyer's address."
+msgstr ""
+
+#: includes/Fulfilment/ShipmentConfirmer.php:387
+msgid "Brazilian orders can only be shipped with Temu's own labels."
+msgstr ""
+
 #. translators: %s: Temu parent order number.
-#: includes/Order/OrderImporter.php:239
+#: includes/Order/OrderImporter.php:246
 #, php-format
 msgid "Imported from Temu order %s."
 msgstr ""
 
-#: includes/Order/OrderImporter.php:275
+#: includes/Order/OrderImporter.php:282
 msgid "Temu product"
 msgstr ""
 
-#: includes/Order/OrderImporter.php:289
+#: includes/Order/OrderImporter.php:308
 msgid "Variation"
 msgstr ""
 

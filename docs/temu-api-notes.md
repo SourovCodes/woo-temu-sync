@@ -459,3 +459,90 @@ as major units and expose `wtsync_order_amount` as the one-line correction. The
 first real order settles it — check an imported total against Seller Center
 before trusting the numbers. The whole payload is kept in order meta regardless,
 since WooCommerce has no field for the seller revenue split.
+
+## Fulfilment
+
+Temu offers two paths, and only one of them is implemented.
+
+### Self-fulfilment — implemented
+
+The seller ships from their own warehouse with their own carrier account and
+reports the tracking number.
+
+1. `bg.logistics.companies.get` with a `regionId` returns the carriers Temu
+   accepts there, as `{logisticsServiceProviderId, logisticsServiceProviderName,
+   logisticsBrandName}`. The numeric id is the `carrierId` used below.
+2. `bg.logistics.shipment.v2.confirm` reports the shipment.
+3. `bg.logistics.shipment.v2.get` reads the shipment back.
+
+The confirm payload is the same shape as the worked example in Temu's own
+signature documentation, which is a useful cross-check that it is right:
+
+```
+sendType: 0
+sendRequestList: [{
+  trackingNumber, carrierId,
+  selfShippingWarehouseId,          // only when the store uses warehouses
+  orderSendInfoList: [{ orderSn, parentOrderSn, goodsId, skuId, quantity }]
+}]
+```
+
+**`sendType` is another undocumented enum.** Temu's signature example uses `0`
+for a payload carrying a tracking number and carrier, which is exactly this
+case, so that is the default rather than a guess. `wtsync_shipment_send_type`
+overrides it.
+
+### Rules Temu enforces and WooCommerce does not
+
+- A tracking number may be used for **one** successful fulfilment only.
+- **Every order item under a parent order ships together.** Partial fulfilment,
+  and partial fulfilment spanning parent orders, are both refused.
+- Each item's **full quantity** must go at once.
+- Temu validates the tracking number against the chosen carrier's own format.
+
+That is why `ShipmentConfirmer` always builds the payload from every Temu line at
+the quantity Temu recorded, and excludes any line the seller added by hand: an
+unrecognised order item gets the whole confirmation rejected, not partly
+accepted.
+
+### Errors worth translating
+
+| Code | Meaning |
+|---|---|
+| 120012004 | Already shipped — treated as success, not failure |
+| 120014001 | Tracking number blank |
+| 120014020 | Tracking number carries symbols; strip `-`, `%`, `#` |
+| 120014005 / 008 / 023 | Tracking number not recognised |
+| 120014022 | Tracking number and carrier do not match |
+| 120014019 | That is a Temu-generated tracking number |
+| 120012023 | Buyer asked to change the address; handle it first |
+| 120012030 | Buyer asked to cancel; answer it first |
+| 120011065 | No shipping address on the order yet |
+| 120012035 / 120012076 | Store restricted from self-confirming; must use buy-shipping |
+| 120011085 / 120012063 / 120012064 | `selfShippingWarehouseId` missing or wrong |
+| 120011086 | Warehouse type and brand not filled in in Seller Center |
+| 120015537 | Brazil requires Temu's own labels |
+
+A store restricted to buy-shipping for one named carrier comes back under
+several codes (`120011092` FedEx, `120011059` USPS, `120011114` Purolator,
+`120011119` Intelcom, `120011123` generic) with the carrier named in the message,
+so Temu's own wording is passed through for those rather than being rewritten.
+
+### Buy-Shipping — deliberately not implemented
+
+Temu's own label purchase, and a much larger surface:
+
+- `bg.logistics.warehouse.list.get` → `bg.logistics.shippingservices.get` →
+  `bg.logistics.shipment.create` → poll `bg.logistics.shipment.result.get` until
+  `shippingLabelStatus` is 0 (in application), 1 (successful) or 2 (failed) →
+  `bg.logistics.shipment.document.get` for the label →
+  `bg.logistics.shipped.package.confirm` when shipping later.
+- The label URL uses a **different request signing scheme**: `toa-app-key`,
+  `toa-access-token`, `toa-random` (32 characters), `toa-timestamp` and
+  `toa-sign` as HTTP headers, with the same MD5 algorithm applied to those four
+  parameters. The URL expires after ten minutes.
+
+A seller running a local warehouse already has carrier accounts and label
+printing, so this buys them little for a large amount of asynchronous machinery,
+PDF handling and a second signing implementation. Out of scope until somebody
+actually needs it.

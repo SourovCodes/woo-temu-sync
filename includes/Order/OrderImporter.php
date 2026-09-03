@@ -61,9 +61,16 @@ class OrderImporter {
 	const META_ADDRESS_SET = '_wtsync_address_resolved';
 
 	/**
-	 * Meta key holding the Temu order item id on a line item.
+	 * Meta keys holding Temu's own identifiers on a line item.
+	 *
+	 * All three are needed to confirm a shipment later:
+	 * bg.logistics.shipment.v2.confirm addresses each item by orderSn, goodsId
+	 * and skuId together, none of which can be recovered from WooCommerce.
 	 */
 	const META_ORDER_SN = '_wtsync_order_sn';
+	const META_GOODS_ID = '_wtsync_line_goods_id';
+	const META_SKU_ID   = '_wtsync_line_sku_id';
+	const META_QUANTITY = '_wtsync_line_quantity';
 
 	/**
 	 * Credential store.
@@ -284,6 +291,18 @@ class OrderImporter {
 		if ( isset( $line['orderSn'] ) ) {
 			$item->add_meta_data( self::META_ORDER_SN, (string) $line['orderSn'], true );
 		}
+
+		if ( isset( $line['goodsId'] ) ) {
+			$item->add_meta_data( self::META_GOODS_ID, (int) $line['goodsId'], true );
+		}
+
+		if ( isset( $line['skuId'] ) ) {
+			$item->add_meta_data( self::META_SKU_ID, (int) $line['skuId'], true );
+		}
+
+		// Temu refuses partial fulfilment, so the quantity it believes it sold is
+		// what has to be confirmed, not whatever the shop later edited the line to.
+		$item->add_meta_data( self::META_QUANTITY, $quantity, true );
 
 		if ( ! empty( $line['spec'] ) ) {
 			$item->add_meta_data( __( 'Variation', 'woo-temu-sync' ), (string) $line['spec'], true );

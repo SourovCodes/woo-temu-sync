@@ -7,11 +7,14 @@
 
 namespace WooTemuSync;
 
+use WooTemuSync\Admin\OrderPanel;
 use WooTemuSync\Admin\ProductColumn;
 use WooTemuSync\Admin\SettingsPage;
 use WooTemuSync\Api\ApiException;
 use WooTemuSync\Api\Auth;
 use WooTemuSync\Api\Credentials;
+use WooTemuSync\Fulfilment\CarrierRepository;
+use WooTemuSync\Fulfilment\ShipmentConfirmer;
 use WooTemuSync\Order\AddressMapper;
 use WooTemuSync\Order\OrderImporter;
 use WooTemuSync\Order\OrderPoller;
@@ -110,6 +113,20 @@ final class Plugin {
 	protected $order_poller;
 
 	/**
+	 * Shipment confirmer.
+	 *
+	 * @var ShipmentConfirmer
+	 */
+	protected $confirmer;
+
+	/**
+	 * Carrier lookup.
+	 *
+	 * @var CarrierRepository
+	 */
+	protected $carriers;
+
+	/**
 	 * Whether init() has already registered the plugin's hooks.
 	 *
 	 * @var bool
@@ -155,6 +172,9 @@ final class Plugin {
 			new OrderImporter( $this->credentials, new AddressMapper(), $this->logger ),
 			$this->logger
 		);
+
+		$this->carriers  = new CarrierRepository( $this->credentials, $this->logger );
+		$this->confirmer = new ShipmentConfirmer( $this->credentials, $this->carriers, $this->logger );
 	}
 
 	/**
@@ -177,6 +197,7 @@ final class Plugin {
 		if ( is_admin() ) {
 			( new SettingsPage( $this->credentials, $this->auth, $this->logger ) )->register();
 			( new ProductColumn() )->register();
+			( new OrderPanel( $this->carriers, $this->confirmer ) )->register();
 		}
 	}
 
@@ -241,6 +262,15 @@ final class Plugin {
 	 */
 	public function order_poller() {
 		return $this->order_poller;
+	}
+
+	/**
+	 * Shipment confirmer.
+	 *
+	 * @return ShipmentConfirmer
+	 */
+	public function confirmer() {
+		return $this->confirmer;
 	}
 
 	/**
