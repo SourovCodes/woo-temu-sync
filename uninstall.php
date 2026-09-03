@@ -28,6 +28,13 @@ delete_option( 'woo_temu_sync_connection' );
 delete_option( 'woo_temu_sync_version' );
 delete_option( 'woo_temu_sync_reconcile_offset' );
 
+/*
+ * The order poll cursor. Deleting it means a reinstall re-covers its look-back
+ * window, which is harmless because the import is keyed on parentOrderSn and
+ * will recognise every order it already created.
+ */
+delete_option( 'woo_temu_sync_order_cursor' );
+
 // Anything this plugin cached rather than stored.
 delete_transient( 'wtsync_auth_state' );
 delete_transient( 'wtsync_notices' );

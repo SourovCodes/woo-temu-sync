@@ -12,6 +12,9 @@ use WooTemuSync\Admin\SettingsPage;
 use WooTemuSync\Api\ApiException;
 use WooTemuSync\Api\Auth;
 use WooTemuSync\Api\Credentials;
+use WooTemuSync\Order\AddressMapper;
+use WooTemuSync\Order\OrderImporter;
+use WooTemuSync\Order\OrderPoller;
 use WooTemuSync\Product\Mapper;
 use WooTemuSync\Product\Publisher;
 use WooTemuSync\Product\Repository;
@@ -100,6 +103,13 @@ final class Plugin {
 	protected $sync_queue;
 
 	/**
+	 * Order poller.
+	 *
+	 * @var OrderPoller
+	 */
+	protected $order_poller;
+
+	/**
 	 * Whether init() has already registered the plugin's hooks.
 	 *
 	 * @var bool
@@ -139,6 +149,12 @@ final class Plugin {
 			new Repository(),
 			$this->logger
 		);
+
+		$this->order_poller = new OrderPoller(
+			$this->credentials,
+			new OrderImporter( $this->credentials, new AddressMapper(), $this->logger ),
+			$this->logger
+		);
 	}
 
 	/**
@@ -154,6 +170,7 @@ final class Plugin {
 		$this->logger->register();
 		$this->scheduler->register();
 		$this->sync_queue->register();
+		$this->order_poller->register();
 
 		add_action( 'init', array( $this, 'maybe_handle_callback' ) );
 
@@ -215,6 +232,15 @@ final class Plugin {
 	 */
 	public function sync_queue() {
 		return $this->sync_queue;
+	}
+
+	/**
+	 * Order poller.
+	 *
+	 * @return OrderPoller
+	 */
+	public function order_poller() {
+		return $this->order_poller;
 	}
 
 	/**

@@ -210,6 +210,35 @@ send nothing when the values match, so a settled catalogue costs no API calls.
   identifier it maps nothing and logs why. Pushing one variation's stock onto
   another is worse than not pushing at all.
 
+## Order import
+
+Temu orders are two-tier: a parent order is the transaction, each order item is
+one SKU. One parent order becomes one WooCommerce order, keyed on
+`parentOrderSn`, so re-importing is a no-op.
+
+`OrderPoller` walks `bg.order.list.v2.get` by last update time every ten minutes.
+**The cursor only advances after a clean pass.** A failure partway through must
+re-cover the same window rather than skip it: an order missed here is an order
+the seller never ships. The window also overlaps the previous one by five
+minutes, because Temu's clock is not ours and the import is idempotent anyway.
+
+- **Never drop an order because a product could not be matched.** An unmatched
+  line becomes a plain line item carrying Temu's own product name. A missing
+  order is invisible to the seller; an untidy one is not.
+- **Never guess a status.** `parentOrderStatus` is an undocumented integer, and
+  marking an unshipped order complete loses a shipment. Only codes explicitly
+  mapped through `wtsync_order_status_map` set a WooCommerce status; everything
+  else lands in the configurable new-order status and records the raw code.
+  Cancellation is the exception and is read from the documented
+  `isCancelledDuringPending` boolean.
+- **The real buyer address is a deliberate second call.** Temu masks it by
+  default. `wtsync_decrypt_addresses` turns the real one off entirely for a shop
+  that fulfils elsewhere, which keeps buyer personal data out of WooCommerce.
+- **Order totals are not yet trusted.** See `docs/temu-api-notes.md`: Temu's
+  amount payload does not say whether it is major or minor units. Check the first
+  real imported order against Seller Center, then pin it with
+  `wtsync_order_amount` if needed.
+
 ## Working agreement
 
 - Run `composer lint` before calling any change done.

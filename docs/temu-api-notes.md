@@ -378,3 +378,84 @@ listing, and **refuses to map anything else**. Pairing multi-SKU listings by
 position would push one variation's stock onto another, which is a far worse
 failure than not syncing. Confirming `skuSn` against a live account would remove
 the fallback entirely.
+
+## Order import
+
+### The order model
+
+Temu is two tiers. A **parent order** (`parentOrderSn`, e.g. `PO-76-9900…`) is the
+transaction; under it sit one or more **order items** (`orderSn`), each bound to
+exactly one Temu SKU. That maps onto a WooCommerce order and its line items.
+
+The `parentOrderSn` embeds the `regionId` — `PO-**76**-…` is Germany — and the
+same region appears on every item beneath it.
+
+### Data is split across four endpoints
+
+Order, address and money are deliberately **not coupled**:
+
+| Method | Gives |
+|---|---|
+| `bg.order.list.v2.get` | Orders and their items; poll by `updateAtStart`/`updateAtEnd`, paged |
+| `bg.order.detail.v2.get` | Fuller detail for one order |
+| `bg.order.shippinginfo.v2.get` | Shipping address, **masked** |
+| `bg.order.decryptshippinginfo.get` | Shipping address, **real** |
+| `bg.order.amount.query` | Money |
+
+Temu recommends polling on **last update time**, not creation time, so an order
+that changes after it was first seen comes back round.
+
+### PII is opt-out, and that is the point
+
+The default shipping endpoint returns a masked address — phone numbers come back
+in a `XXX-XXX` shape. Only `bg.order.decryptshippinginfo.get` returns something
+shippable.
+
+The importer fetches the real address because an order cannot be fulfilled
+without it, but `wtsync_decrypt_addresses` turns that off for a shop that fulfils
+elsewhere, keeping buyer personal data out of WooCommerce entirely. That is worth
+knowing for a non-EU seller shipping into the EU.
+
+Address fields map as: `addressExtra.firstName`/`lastName` (falling back to
+splitting `receiptName`), `addressLine1`, `addressLine2` + `addressLine3` joined
+into WooCommerce's single second line, `regionName3` (or `regionName4`) as the
+city, `regionName2` as the state, `postCode`, and the country resolved from
+`regionId` because Temu only names it in prose.
+
+### Order status — undocumented again
+
+Temu names five statuses in prose — **Pending, Unshipped, Shipped, Delivered,
+Cancelled** — and publishes **no mapping to the integers** `parentOrderStatus`
+actually carries. Same situation as the publish status.
+
+So a WooCommerce status is only ever set from a code that has been explicitly
+mapped through `wtsync_order_status_map`, which ships empty. Guessing here is
+worse than guessing a publish status: marking an unshipped order complete loses a
+shipment.
+
+**Cancellation is knowable without the enum.** `isCancelledDuringPending` is a
+documented boolean on each order item, so a fully cancelled order is detected
+from that rather than from a guess.
+
+### Pending orders
+
+Temu's guide is explicit: while an order is Pending the consumer can still change
+the address and the quantity, and sellers should begin processing only once it
+reaches Unshipped. Temu advances it automatically, usually within minutes.
+
+Once the status enum is confirmed, `wtsync_should_import_order` should filter
+Pending orders out. Until then everything is imported, because skipping on a
+guessed code could hide real orders.
+
+### Money — unit ambiguity
+
+`bg.order.amount.query` returns `{amount, currency}` pairs for `customerPaid`,
+`retailPriceTotalTaxIncl`, `taxTotal`, `shipAmountTotalTaxIncl`, `taxTotal`,
+`estimatedRevenue`, `discountFromTEMU`, `discountFromSeller` and `refundsTotal`.
+
+**Unconfirmed:** whether `amount` is major or minor units. Everywhere else in the
+API money is a decimal string; here the schema shows a bare number. We treat it
+as major units and expose `wtsync_order_amount` as the one-line correction. The
+first real order settles it — check an imported total against Seller Center
+before trusting the numbers. The whole payload is kept in order meta regardless,
+since WooCommerce has no field for the seller revenue split.

@@ -23,8 +23,8 @@ seller accounts.
 = Status =
 
 Early development. The connection layer, product publishing, publication status
-polling and stock and price sync are complete and tested; order import is in
-progress.
+polling, stock and price sync and order import are complete and tested.
+Fulfilment - pushing tracking numbers back to Temu - is the remaining piece.
 
 Note that Temu grants its price API per store, through their business team. Stock
 sync works for every seller; price sync needs that grant, and the plugin tells you
@@ -62,3 +62,5 @@ your site's WordPress salts.
   costs one API call.
 * Price sync that respects Temu's price-order workflow and explains, per product,
   when the platform will not accept a change.
+* Order import, polling Temu on last-update time, with buyer address decryption
+  you can switch off if you fulfil elsewhere.
