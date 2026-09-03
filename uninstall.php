@@ -26,6 +26,7 @@ wp_clear_scheduled_hook( 'wtsync_first_status_check' );
  */
 delete_option( 'woo_temu_sync_connection' );
 delete_option( 'woo_temu_sync_version' );
+delete_option( 'woo_temu_sync_reconcile_offset' );
 
 // Anything this plugin cached rather than stored.
 delete_transient( 'wtsync_auth_state' );

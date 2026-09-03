@@ -10,6 +10,8 @@ namespace WooTemuSync\Admin;
 use WooTemuSync\Product\PublishStatus;
 use WooTemuSync\Product\Publisher;
 use WooTemuSync\Product\StatusPoller;
+use WooTemuSync\Sync\PriceSync;
+use WooTemuSync\Sync\StockSync;
 
 defined( 'ABSPATH' ) || exit;
 
@@ -126,6 +128,45 @@ class ProductColumn {
 			printf(
 				'<br /><span style="color:#996800;font-size:11px;">%s</span>',
 				esc_html__( 'stopped checking', 'woo-temu-sync' )
+			);
+		}
+
+		$this->render_sync_state( $product );
+	}
+
+	/**
+	 * Show when stock last synced, and why a price did not.
+	 *
+	 * The blocked reason is the useful half. Most sellers are not whitelisted for
+	 * Temu's price API, and without this the prices would simply never move with
+	 * nothing on screen to explain it.
+	 *
+	 * @param \WC_Product $product Product.
+	 * @return void
+	 */
+	protected function render_sync_state( $product ) {
+		$stock_at = (int) $product->get_meta( StockSync::META_SYNCED_AT );
+
+		if ( $stock_at > 0 ) {
+			printf(
+				'<br /><span style="color:#787c82;font-size:11px;">%s</span>',
+				esc_html(
+					sprintf(
+						/* translators: %s: human readable time difference. */
+						__( 'stock synced %s ago', 'woo-temu-sync' ),
+						human_time_diff( $stock_at, time() )
+					)
+				)
+			);
+		}
+
+		$blocked = (string) $product->get_meta( PriceSync::META_BLOCKED );
+
+		if ( '' !== $blocked ) {
+			printf(
+				'<br /><span style="color:#996800;font-size:11px;" title="%s">%s</span>',
+				esc_attr( $blocked ),
+				esc_html__( 'price not synced', 'woo-temu-sync' )
 			);
 		}
 	}

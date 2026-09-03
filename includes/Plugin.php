@@ -17,6 +17,10 @@ use WooTemuSync\Product\Publisher;
 use WooTemuSync\Product\Repository;
 use WooTemuSync\Product\Scheduler;
 use WooTemuSync\Product\StatusPoller;
+use WooTemuSync\Sync\PriceSync;
+use WooTemuSync\Sync\SkuMap;
+use WooTemuSync\Sync\StockSync;
+use WooTemuSync\Sync\SyncQueue;
 
 defined( 'ABSPATH' ) || exit;
 
@@ -89,6 +93,13 @@ final class Plugin {
 	protected $scheduler;
 
 	/**
+	 * Stock and price sync queue.
+	 *
+	 * @var SyncQueue
+	 */
+	protected $sync_queue;
+
+	/**
 	 * Whether init() has already registered the plugin's hooks.
 	 *
 	 * @var bool
@@ -118,6 +129,16 @@ final class Plugin {
 		$this->publisher   = new Publisher( $this->credentials, new Mapper(), $this->logger );
 		$this->poller      = new StatusPoller( $this->credentials, $this->logger );
 		$this->scheduler   = new Scheduler( $this->poller, new Repository(), $this->logger );
+
+		$mapper  = new Mapper();
+		$sku_map = new SkuMap( $this->credentials, $mapper, $this->logger );
+
+		$this->sync_queue = new SyncQueue(
+			new StockSync( $this->credentials, $sku_map, $this->logger ),
+			new PriceSync( $this->credentials, $sku_map, $this->logger ),
+			new Repository(),
+			$this->logger
+		);
 	}
 
 	/**
@@ -132,6 +153,7 @@ final class Plugin {
 
 		$this->logger->register();
 		$this->scheduler->register();
+		$this->sync_queue->register();
 
 		add_action( 'init', array( $this, 'maybe_handle_callback' ) );
 
@@ -184,6 +206,15 @@ final class Plugin {
 	 */
 	public function poller() {
 		return $this->poller;
+	}
+
+	/**
+	 * Stock and price sync queue.
+	 *
+	 * @return SyncQueue
+	 */
+	public function sync_queue() {
+		return $this->sync_queue;
 	}
 
 	/**

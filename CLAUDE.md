@@ -181,6 +181,35 @@ Because there is no documented terminal state, polling gives up by attempt count
 state (`wtsync_status_max_attempts`, default 12), and the products list column says
 "stopped checking" rather than leaving the merchant wondering why the status froze.
 
+## Stock and price sync
+
+Changes are **coalesced, never pushed inline**. A busy shop fires a stock change
+on every checkout; pushing each one synchronously would put a Temu round trip
+inside a customer's checkout and walk into the 20 req/s limit. `SyncQueue` marks
+the product dirty and queues one Action Scheduler job (`wtsync_sync_debounce`,
+default 120s), so ten sales in a minute cost one API call. A variation is always
+queued as its parent, because Temu updates a whole listing at once.
+
+An hourly reconciliation sweep walks the published catalogue a batch at a time,
+because hooks miss things — direct database writes, importers, a job lost in a
+migration. It is cheap: both syncs compare against what Temu last accepted and
+send nothing when the values match, so a settled catalogue costs no API calls.
+
+- **Stock uses full overwrite, never the incremental delta.** The client retries,
+  and a retried delta applies twice. This is not a preference; do not "optimise"
+  it into `skuStockChangeList`.
+- **A failed push must not record the values as accepted**, or the change
+  detection would suppress the retry and the shop would silently stop syncing.
+  Both syncs only write their last-sent meta after Temu accepts.
+- **Most sellers cannot sync prices at all.** Temu's price API is whitelisted per
+  store through their business team, and prices go through a negotiation
+  workflow that refuses changes mid-review. `PriceSync` records why on the
+  product and the products column shows it, because a price that silently never
+  moves is the worst possible failure mode here.
+- **`SkuMap` refuses to guess.** Where a multi-SKU listing cannot be matched by
+  identifier it maps nothing and logs why. Pushing one variation's stock onto
+  another is worse than not pushing at all.
+
 ## Working agreement
 
 - Run `composer lint` before calling any change done.

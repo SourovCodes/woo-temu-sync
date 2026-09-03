@@ -73,6 +73,43 @@ class Repository {
 	}
 
 	/**
+	 * Products that have been published to Temu, in a stable order.
+	 *
+	 * Ordered by ID so a sweep can page through the catalogue across several
+	 * runs without seeing the same product twice or missing one.
+	 *
+	 * @param int $limit  Maximum products to return.
+	 * @param int $offset Where to resume.
+	 * @return \WC_Product[]
+	 */
+	public function published( $limit = 50, $offset = 0 ) {
+		$query = new \WP_Query(
+			array(
+				'post_type'              => array( 'product' ),
+				'post_status'            => 'any',
+				'posts_per_page'         => (int) $limit,
+				'offset'                 => max( 0, (int) $offset ),
+				'fields'                 => 'ids',
+				'no_found_rows'          => true,
+				'update_post_term_cache' => false,
+				'orderby'                => 'ID',
+				'order'                  => 'ASC',
+				// phpcs:ignore WordPress.DB.SlowDBQuery.slow_db_query_meta_query -- Indexed meta lookup, run on a schedule rather than a page load.
+				'meta_query'             => array(
+					array(
+						'key'     => Publisher::META_GOODS_ID,
+						'value'   => 0,
+						'compare' => '>',
+						'type'    => 'NUMERIC',
+					),
+				),
+			)
+		);
+
+		return $this->to_products( $query->posts );
+	}
+
+	/**
 	 * Hydrate post ids into product objects, skipping any that have gone away.
 	 *
 	 * @param array $ids Post ids.

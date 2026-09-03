@@ -276,3 +276,105 @@ Other decisions worth remembering:
   exist yet. The attempt is counted and no status is invented.
 - **Action Scheduler is preferred over WP-Cron** where available, since it
   survives a site with no traffic. WP-Cron is the fallback.
+
+## Stock sync
+
+Method: **`bg.local.goods.stock.edit`**, in the observed scope list.
+
+Two modes, and the choice between them is a correctness decision rather than a
+preference:
+
+| Mode | Payload | Behaviour |
+|---|---|---|
+| Full | `skuStockTargetList: [{skuId, stockTarget}]` | Overwrites the level |
+| Incremental | `skuStockChangeList: [{skuId, stockDiff}]` | Adds a delta |
+
+**We use full.** `Client` retries on rate limits and transient failures, and a
+retried delta applies twice; a retried overwrite does not. Temu's own guide warns
+that duplicate requests lead to multiple operations on the value and asks for
+idempotency control. WooCommerce is the source of truth anyway, so a delta buys
+nothing. Sending both modes in one request is an error (`150013003`).
+
+`requestUniqueKey` is sent regardless, derived from the levels themselves so it
+is stable for a given state and changes when the state does.
+
+Quantities must be **0 to 1,000,000** (`150013002`), so levels are floored and
+clamped. WooCommerce allows negative stock on backorder; Temu does not.
+
+## Price sync
+
+Methods: **`bg.local.goods.priceorder.change.sku.price`** and
+**`bg.local.goods.priceorder.query`**.
+
+### Two constraints that shape the whole feature
+
+**1. The price API is whitelisted.** Temu documents it as a sensitive interface
+"only available to whitelisted, locally developed applications", granted per
+store through their business team. `bg.local.goods.sku.list.price.query` is
+described as available only to "self-developed sellers or a small number of
+third-party service providers".
+
+A seller without that grant can publish products and sync stock perfectly well
+and simply cannot push prices. `PriceSync::is_available()` therefore treats a
+known-but-missing scope as a hard stop with a plain-language explanation, while
+an empty scope list means *unknown* and the attempt is allowed so the API can be
+the authority.
+
+**2. Prices are negotiated, not set.** Temu runs a price order workflow:
+
+| Status | Meaning |
+|---|---|
+| 100 | Under review |
+| 101 | Awaiting merchant confirmation |
+| 201 | Passed |
+| 202 | Rejected, pending modification |
+| 203 | Merchant confirmed |
+| 204 | Merchant initiated modification |
+| 205 | Merchant refused |
+| 206 | Rejected |
+
+A modification may only be initiated from **201, 202, 203, 205 or 206**. While a
+price is under review (100) or waiting on the merchant (101), a change is
+refused. So `bg.local.goods.priceorder.query` (`priceOrderType=2`) is checked
+before anything is sent.
+
+Failing to *read* the workflow is not treated as a block — that endpoint is
+whitelisted just as tightly, and a permission error there says nothing about
+whether a change would be accepted.
+
+### Base price is not the shelf price
+
+> "The base price reflects the amount you receive from each sale under standard,
+> non-promotional conditions."
+
+Temu sets what the buyer pays on top of it. Defaulting to the WooCommerce price
+keeps the seller's settlement equal to what they charge in their own shop, which
+is a sane starting point, but a seller carrying different margins per channel
+will want `wtsync_base_price` to adjust it.
+
+### Errors worth translating
+
+| Code | Meaning |
+|---|---|
+| 150011103 | An ERP price is sitting unconfirmed in Seller Center; confirm it first |
+| 150011101 | The change was larger than Temu allows in one step |
+| 150010233 | The product is in a promotion or its cool-down; cannot lower the price |
+| 150019004 | Price outside the range Temu will accept for that SKU |
+| 150011018 | Too many decimal places for the currency |
+
+## The SKU identifier problem
+
+Both stock and price address SKUs by Temu's numeric `skuId`, which is minted at
+listing time and is not knowable from anything the shop holds. So the mapping has
+to be fetched and cached.
+
+`temu.local.goods.list.retrieve` accepts `outGoodsSnList` — *our* identifiers —
+and returns `skuInfoList: [{skuId, skuSn, specList, stock}]`.
+
+**Unconfirmed:** whether `skuSn` echoes the `externalSkuId` we supplied or is
+Temu's own serial. `SkuMap` handles both honestly: it matches on the identifier
+when that works, falls back to the only possible pairing for a single-SKU
+listing, and **refuses to map anything else**. Pairing multi-SKU listings by
+position would push one variation's stock onto another, which is a far worse
+failure than not syncing. Confirming `skuSn` against a live account would remove
+the fallback entirely.

@@ -9,7 +9,7 @@ msgstr ""
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"POT-Creation-Date: 2026-09-03T15:36:18+00:00\n"
+"POT-Creation-Date: 2026-09-03T15:52:34+00:00\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "X-Generator: WP-CLI 2.12.0\n"
 "X-Domain: woo-temu-sync\n"
@@ -34,34 +34,44 @@ msgstr ""
 msgid "Sourov Biswas"
 msgstr ""
 
-#: includes/Admin/ProductColumn.php:46
-#: includes/Admin/ProductColumn.php:52
+#: includes/Admin/ProductColumn.php:48
+#: includes/Admin/ProductColumn.php:54
 #: includes/Admin/SettingsPage.php:81
 msgid "Temu"
 msgstr ""
 
-#: includes/Admin/ProductColumn.php:84
+#: includes/Admin/ProductColumn.php:86
 msgid "Failed"
 msgstr ""
 
-#: includes/Admin/ProductColumn.php:89
+#: includes/Admin/ProductColumn.php:91
 msgid "Not listed"
 msgstr ""
 
 #. translators: %d: Temu product id.
-#: includes/Admin/ProductColumn.php:102
+#: includes/Admin/ProductColumn.php:104
 #, php-format
 msgid "Temu ID %d"
 msgstr ""
 
 #. translators: %s: human readable time difference.
-#: includes/Admin/ProductColumn.php:116
+#: includes/Admin/ProductColumn.php:118
 #, php-format
 msgid "checked %s ago"
 msgstr ""
 
-#: includes/Admin/ProductColumn.php:128
+#: includes/Admin/ProductColumn.php:130
 msgid "stopped checking"
+msgstr ""
+
+#. translators: %s: human readable time difference.
+#: includes/Admin/ProductColumn.php:156
+#, php-format
+msgid "stock synced %s ago"
+msgstr ""
+
+#: includes/Admin/ProductColumn.php:169
+msgid "price not synced"
 msgstr ""
 
 #: includes/Admin/SettingsPage.php:80
@@ -364,6 +374,38 @@ msgstr ""
 #: includes/Product/PublishStatus.php:160
 #, php-format
 msgid "Temu status %1$s / %2$s"
+msgstr ""
+
+#: includes/Sync/PriceSync.php:216
+msgid "This Temu app is not authorised to change prices. Temu grants the price API per store through their business team; ask them to whitelist the app."
+msgstr ""
+
+#: includes/Sync/PriceSync.php:255
+msgid "Temu is still reviewing this product's price, or is waiting for the seller to answer a pricing task in Seller Center. The new price will be sent once that is settled."
+msgstr ""
+
+#: includes/Sync/PriceSync.php:365
+msgid "Temu refused the price change because this app is not whitelisted for the price API. Temu grants it per store through their business team."
+msgstr ""
+
+#: includes/Sync/PriceSync.php:369
+msgid "Temu is holding a price this plugin sent earlier that nobody confirmed. Confirm it in Seller Center before sending another."
+msgstr ""
+
+#: includes/Sync/PriceSync.php:373
+msgid "The price change was larger than Temu allows in one step. Move the price in smaller increments, or wait and retry."
+msgstr ""
+
+#: includes/Sync/PriceSync.php:377
+msgid "This product is in a Temu promotion, or still inside its cool-down, so the price cannot be lowered yet."
+msgstr ""
+
+#: includes/Sync/PriceSync.php:381
+msgid "Temu rejected the price as outside the range it will accept for this SKU."
+msgstr ""
+
+#: includes/Sync/PriceSync.php:429
+msgid "Synchronised with the price in the seller's own shop."
 msgstr ""
 
 #. translators: %s: link to the plugin's releases on GitHub.

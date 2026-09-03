@@ -22,9 +22,13 @@ seller accounts.
 
 = Status =
 
-Early development. The connection layer, product publishing and publication
-status polling are complete and tested; stock and price sync and order import
-are in progress.
+Early development. The connection layer, product publishing, publication status
+polling and stock and price sync are complete and tested; order import is in
+progress.
+
+Note that Temu grants its price API per store, through their business team. Stock
+sync works for every seller; price sync needs that grant, and the plugin tells you
+plainly when it is missing rather than silently leaving prices unchanged.
 
 == Installation ==
 
@@ -54,3 +58,7 @@ your site's WordPress salts.
 * Product publishing through the Add Products V3 API, including unit conversion
   and image URL validation.
 * Background publication status polling with a Temu column on the products list.
+* Stock sync using Temu's full-overwrite mode, coalesced so a burst of sales
+  costs one API call.
+* Price sync that respects Temu's price-order workflow and explains, per product,
+  when the platform will not accept a change.
