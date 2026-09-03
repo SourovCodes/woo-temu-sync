@@ -1,0 +1,60 @@
+{
+    "name": "sourovcodes/woo-temu-sync",
+    "description": "List WooCommerce products on Temu and sync stock, prices and orders through the Temu Open API.",
+    "type": "wordpress-plugin",
+    "license": "GPL-2.0-or-later",
+    "require": {
+        "php": ">=8.2"
+    },
+    "require-dev": {
+        "woocommerce/woocommerce-sniffs": "^2.0",
+        "phpunit/phpunit": "^9.6",
+        "wp-phpunit/wp-phpunit": "^7.0",
+        "yoast/phpunit-polyfills": "^4.0"
+    },
+    "autoload": {
+        "psr-4": {
+            "WooTemuSync\\": "includes/"
+        }
+    },
+    "autoload-dev": {
+        "psr-4": {
+            "WooTemuSync\\Tests\\": "tests/"
+        }
+    },
+    "config": {
+        "platform": {
+            "php": "8.2.29"
+        },
+        "allow-plugins": {
+            "dealerdirect/phpcodesniffer-composer-installer": true
+        },
+        "sort-packages": true
+    },
+    "scripts": {
+        "lint": "phpcs",
+        "lint:fix": "phpcbf",
+        "test": "phpunit",
+        "test:coverage": "phpunit --coverage-text --coverage-html=coverage-html",
+        "check": [
+            "@composer validate --strict",
+            "bin/check-version.sh",
+            "@i18n:check",
+            "@lint",
+            "@test"
+        ],
+        "i18n": "bin/make-translations.sh",
+        "i18n:check": "bin/check-translations.sh",
+        "build": "bin/build-zip.sh"
+    },
+    "scripts-descriptions": {
+        "lint": "Check the plugin against the WooCommerce/WordPress coding standards.",
+        "lint:fix": "Automatically fix the coding standard violations that can be fixed.",
+        "test": "Run the PHPUnit suite against the WordPress test library.",
+        "test:coverage": "Run the suite and write a coverage report to coverage-html/.",
+        "check": "Run everything CI runs before it builds: validate, version, i18n, lint, test.",
+        "i18n": "Re-extract the POT and recompile every translation catalogue.",
+        "i18n:check": "Check the POT still lists every translatable string in the source.",
+        "build": "Build the distributable plugin zip into dist/."
+    }
+}
